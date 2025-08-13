@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spotify Home</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .song { margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        img { width: 64px; height: 64px; vertical-align: middle; }
+        .played-time { font-size: 0.9em; color: gray; }
+        button { margin: 5px; padding: 8px 12px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Welcome!</h1>
+    <button id="recent-btn">Get Recently Played Songs</button>
+    <button id="mood-log-btn">View Mood Log Report</button>
+    <div id="songs-container"></div>
+
+    <script>
+        // Extract token from query params
+        const params = new URLSearchParams(window.location.search);
+        const accessToken = params.get("access_token");
+
+        if (!accessToken) {
+            alert("No access token found. Please log in again.");
+            window.location.href = "/";
+        }
+
+        document.getElementById("recent-btn").addEventListener("click", async () => {
+            try {
+                const response = await fetch("https://api.spotify.com/v1/me/player/recently-played", {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch recently played songs");
+                }
+
+                const data = await response.json();
+                const container = document.getElementById("songs-container");
+                container.innerHTML = "";
+
+                data.items.forEach(item => {
+                    const track = item.track;
+                    const playedAt = new Date(item.played_at);
+                    const songDiv = document.createElement("div");
+                    songDiv.className = "song";
+                    songDiv.innerHTML = `
+                        <img src="${track.album.images[0]?.url}" alt="Album Art">
+                        <strong>${track.name}</strong> by ${track.artists.map(a => a.name).join(", ")}
+                        <div class="played-time">Played at: ${playedAt.toLocaleString()}</div>
+                    `;
+                    container.appendChild(songDiv);
+                });
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        document.getElementById("mood-log-btn").addEventListener("click", () => {
+            // Placeholder for future mood log page
+            //window.location.href = `/mood-log.html?access_token=${accessToken}`;
+            window.location.href = `/static/mood_report.html?access_token=${accessToken}`;
+        });
+    </script>
+</body>
+</html>

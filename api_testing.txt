@@ -1,0 +1,72 @@
+Absolutely! Here’s a simple step-by-step guide to test your Spotify API manually using Postman — no prior experience needed:
+
+Step-by-step: Test Spotify Recently Played API in Postman
+1. Download and install Postman
+Go to https://www.postman.com/downloads/
+
+Download the version for your OS and install it.
+
+2. Open Postman
+Launch Postman after installation.
+
+3. Create a new GET request
+Click New (top left) → Select Request
+
+Give it a name like Spotify Recently Played and save it in a collection or skip saving.
+
+4. Enter the request URL
+In the URL input field (middle top), paste:
+
+bash
+Copy
+Edit
+https://api.spotify.com/v1/me/player/recently-played
+5. Set the Authorization header
+Click on the Headers tab below the URL bar.
+
+Add a new header:
+
+Key	Value
+Authorization	Bearer YOUR_ACCESS_TOKEN
+
+Replace YOUR_ACCESS_TOKEN with the actual access token string you got from Spotify.
+
+6. Send the request
+Click the Send button (blue button on the right).
+
+7. View the response
+Scroll down to see the response body.
+
+If successful, you will see JSON data with a key "items" containing your recently played tracks.
+
+Example:
+
+json
+Copy
+Edit
+{
+  "items": [
+    {
+      "track": {
+        "name": "Song Title",
+        "artists": [{"name": "Artist Name"}],
+        ...
+      },
+      ...
+    },
+    ...
+  ]
+}
+If you see "items": [] (empty array), it means no recent tracks found.
+
+Troubleshooting tips
+If you get 401 Unauthorized or Invalid token, your access token might be expired or wrong.
+
+Make sure your token has the user-read-recently-played scope.
+
+Make sure you’re using the correct token for the Spotify user who has actually played music.
+
+Optional: How to get an access token?
+Usually you get this after Spotify OAuth login.
+
+If you want, I can help you with a quick way to get a token via Spotify’s Console.

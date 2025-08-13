@@ -1,0 +1,27 @@
+project-root/
+│
+├── frontend/           # React or HTML/CSS/JS code
+│   ├── public/
+│   └── src/
+│       ├── components/
+│       ├── pages/
+│       ├── utils/
+│       └── App.js
+│
+├── backend/            # API + ML model
+│   ├── app/
+│   │   ├── main.py     # FastAPI entry point
+│   │   ├── auth.py     # Spotify OAuth handling
+│   │   ├── routes/     # API route handlers
+│   │   ├── models/     # DB schemas / ML model code
+│   │   ├── services/   # Spotify API calls, mood analysis
+│   │   └── config.py   # API keys, env settings
+│   ├── requirements.txt
+│
+├── database/           # SQL or NoSQL setup & migrations
+│   ├── schema.sql
+│   └── seed_data.sql
+│
+├── .env                # API keys (Spotify, DB URL)
+├── README.md
+└── docker-compose.yml  # Optional for containerized setup

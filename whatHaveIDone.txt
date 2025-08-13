@@ -1,0 +1,353 @@
+Step 1 – Initialize the Project
+We’ll start by setting up the folder structure and preparing basic configurations.
+
+1️⃣ Create folders
+
+bash
+Copy
+Edit
+mkdir spotify-mood-tracker
+cd spotify-mood-tracker
+mkdir frontend backend database
+cd backend && mkdir app app/routes app/models app/services && cd ..
+2️⃣ Create empty starter files
+
+bash
+Copy
+Edit
+touch backend/app/main.py backend/app/auth.py backend/app/config.py
+touch backend/requirements.txt
+touch database/schema.sql database/seed_data.sql
+touch .env README.md
+3️⃣ Initialize Git (optional but recommended)
+
+bash
+Copy
+Edit
+git init
+
+stp 2 ----\
+create a venv for python
+cd backend
+python -m venv venv
+source venv/bin/activate  # Mac/Linux
+venv\Scripts\activate     # Windows
+
+
+Step 2 – Backend Setup (Python + FastAPI)
+We’ll start from backend first because frontend needs APIs ready to fetch data.
+
+1️⃣ Create a Python virtual environment
+
+bash
+Copy
+Edit
+cd backend
+python -m venv venv
+source venv/bin/activate  # Mac/Linux
+venv\Scripts\activate     # Windows
+2️⃣ Install dependencies
+
+bash
+Copy
+Edit
+pip install fastapi uvicorn requests python-dotenv spotipy pandas scikit-learn
+pip freeze > requirements.txt
+3️⃣ Basic FastAPI server (backend/app/main.py)
+
+python
+Copy
+Edit
+from fastapi import FastAPI
+from app import auth
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Spotify Mood Tracker Backend Running"}
+4️⃣ Run the backend server
+
+bash
+Copy
+Edit
+uvicorn app.main:app --reload
+
+
+** creating the spotify app for enabling api calls
+on spotify for developers, using personal gmail keshavnahar2103
+
+App name*(required)
+Spotify Mood Timeline Tracker
+Please make sure the name doesn't start with "Spot"
+
+App description*(required)
+A web app that fetches a user’s Spotify listening history and analyzes song moods to create a mood timeline.
+Website
+http://localhost:3000
+Redirect URIs*(required)
+http://localhost:8000/callback  --- it is not working due to spotify policy
+insed used this one   http://127.0.0.1:8000/callback
+This redirect URI is not secure. Learn more here.
+
+
+Which API/SDKs are you planning to use?
+
+Web API
+
+what i got from registering on spotify 
+Client ID
+4f5a134d133c48f4ae3612f1df87627d
+
+Client secret
+fdd84214b1344755a05406611c2c1482
+
+added client id, client secret and redirectt link in the .env files
+
+step 4 
+now setting up database setup
+
+database/schema.sql
+
+schema is as follows
+
+CREATE TABLE mood_history (
+    id SERIAL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    track_name TEXT NOT NULL,
+    artist_name TEXT NOT NULL,
+    mood TEXT NOT NULL,
+    listened_at TIMESTAMP NOT NULL
+);
+
+**** working with frontend
+You can run the command npx create-react-app . only inside the folder where you want to create your React app (in your case, inside the frontend folder).
+
+Why?
+The . means "create the React app in the current directory."
+
+So you need to be inside the folder where you want the React app files to be generated.
+
+If you run it anywhere else, it will create the app files in that directory.
+
+Example workflow:
+bash
+Copy
+Edit
+cd C:\Users\nahar\OneDrive\Desktop\spotify-mood-tracker\frontend
+npx create-react-app .
+This creates the React app inside the frontend folder.
+
+thos command acaused confict as public and src were alredy ther
+so have to remove both 
+rmdir /S /Q public
+rmdir /S /Q src
+
+then ran tha command  npx create-react-app .
+
+C:\Users\nahar\OneDrive\Desktop\spotify-mood-tracker\frontend>npm install axios recharts
+
+added 42 packages, and audited 1382 packages in 5s
+
+270 packages are looking for funding
+  run `npm fund` for details
+
+9 vulnerabilities (3 moderate, 6 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+***api integration with backend
+
+made a dir utils under frontend/src under ehich created api.js with code
+import axios from "axios";
+
+const API = axios.create({
+    baseURL: "http://localhost:8000"
+});
+
+export const getMoodTimeline = () => API.get("/mood-timeline");
+
+used this base url insted as we can use local host in the app generation by spotify
+
+http://127.0.0.1:8000
+
+
+Fetch Recently Played Tracks (Add in backend/app/services/spotify_api.py)
+Create a new file to fetch user’s recent tracks:
+
+import requests
+
+def get_recently_played(access_token, limit=20):
+    url = "https://api.spotify.com/v1/me/player/recently-played"
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+    params = {"limit": limit}
+
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code != 200:
+        raise Exception(f"Spotify API error: {response.status_code} {response.text}")
+
+    data = response.json()
+    items = data.get("items", [])
+    tracks = []
+    for item in items:
+        track = item["track"]
+        played_at = item["played_at"]
+        tracks.append({
+            "name": track["name"],
+            "artists": [artist["name"] for artist in track["artists"]],
+            "played_at": played_at
+        })
+    return tracks
+
+Test Fetch Endpoint (Add route to main or create new router)
+In backend/app/routes/tracks.py:
+
+from fastapi import APIRouter, Query
+from app.services.spotify_api import get_recently_played
+
+router = APIRouter()
+
+@router.get("/recent-tracks")
+def recent_tracks(access_token: str = Query(...)):
+    try:
+        tracks = get_recently_played(access_token)
+        return {"tracks": tracks}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+there were two rowutes with same noute so addhed this insteed in main.py
+Prefix or Tags:
+Usually, when including routers, you can add a prefix to separate routes, e.g.:
+
+python
+Copy
+Edit
+app.include_router(auth_router, prefix="/auth")
+app.include_router(tracks_router, prefix="/tracks")
+This keeps routes organized and avoids collisions.
+
+
+So, to access the login route, you should open:
+ass we added prefix in the route so we need it
+arduino
+Copy
+Edit
+http://127.0.0.1:8000/auth/login
+instead of:
+
+arduino
+Copy
+Edit
+http://127.0.0.1:8000/login
+
+
+as we changed the auth path so we have to add another redirect link 
+we also changed the redirect link in .env file
+
+to SPOTIFY_REDIRECT_URI=http://127.0.0.1:8000/auth/callback
+just added /auth in it
+
+we are getting the access tokens success fully
+
+after succesfully fetching the token, we  Create a service function to fetch recent tracks from Spotify
+Create an API endpoint to call this function and return recent tracks
+File: backend/app/routes/tracks.py
+ Include the new router in your main app
+File: backend/app/main.py
+
+Make sure you import and include this router:
+
+python
+Copy
+Edit
+from app.routes.tracks import router as tracks_router
+
+app.include_router(tracks_router, prefix="/tracks")
+
+4. Test your endpoint
+Run your backend:
+
+bash
+Copy
+Edit
+uvicorn app.main:app --reload
+Then open in browser or Postman:
+http://127.0.0.1:8000/tracks/recent-tracks?access_token=YOUR_ACCESS_TOKEN_HERE
+
+
+postman installed for api Troubleshooting
+account for login keshavnahar2103@gmail.com
+
+
+till date working
+creted the clint on spotyfy got clien ID
+then got the access token and refresh token, 
+feetched data from the access token, access token expires 
+one hour thus used after it the refresh token to get new access
+than using the new access token got the recent list
+
+updated the methods in auth, used new mthod refresh token in the auth.py 
+than using the following command 
+http://127.0.0.1:8000/auth/refresh-token?refresh_token=YOUR_REFRESH_TOKEN
+ got new tokenthen
+
+ http://127.0.0.1:8000/tracks/recent-tracks?access_token=NEW_ACCESS_TOKEN&limit=50
+ used above link to get the list of tracks in jason format
+
+
+working of automated fetching of new access tokens
+after adding refresh_access_token method we can call url
+http://127.0.0.1:8000/tracks/refresh_access_token
+which gives us the new access token and then it is use dto fetch the 
+song list.
+
+http://127.0.0.1:8000/tracks/recent-tracks?access_token=BQAcoNGmpgUtgzIN7c2EkNr8n_InWRJmp0SFb9NDZdtLHj3l4QQlYTYyKffUO_f3l5uGv1JnA3DyqZFr3ZaV1wZq1F_hHc2iyzPPDGXQMbRba8MjSlteu_Jyrpdc6G_8S6AoCAtFGMhszhPAOXDUGbUIe4qMpqrQogGgoMSFg5f3ipTeLnMSZHqdLbPPuwLPQj-HA5gm-kZVSE_ZmsqHCV0kpFw8BGPG2aQco8USTTAI4yYC4ood53vBerhrkQl0
+ now th url is owking perectly fine
+
+ ####  import\
+ 2️⃣ Backend Endpoints to Support Frontend
+Right now, we have:
+
+/login → Redirect to Spotify
+
+/callback → Save tokens
+
+/tracks/recent → Return recently played songs
+
+We should add:
+
+/tracks/moods → Run mood prediction model & return moods along with songs.
+
+
+so made the idex.html file and sved it, 
+its curreenty in the backend/app/static/idnex.htm
+
+Add this to your main.py (or app.py where FastAPI is created):
+
+python
+Copy
+Edit
+from fastapi.staticfiles import StaticFiles
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+Then you can open the page at:
+
+arduino
+Copy
+Edit
+http://127.0.0.1:8000/static/index.html
+
+
+above otion is using the file via the fast api
+other way is to run as completely diff file static file 
+but there we wold have to use CORS to be enabled oin fast api.
+
+
+
+
